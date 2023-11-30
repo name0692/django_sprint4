@@ -60,8 +60,9 @@ def post_detail(request, post_id):
     form = CommentForm()
 
     if (
-            post.is_published and
-            (post.category.is_published and post.pub_date <= timezone.now())
+            post.is_published and (
+            post.category.is_published and post.pub_date <= timezone.now()
+    )
     ):
         context = {
             'post': post,
@@ -71,12 +72,11 @@ def post_detail(request, post_id):
         return render(request, template, context)
 
     if (
-            request.user == post.author and
-            (
-                    not post.is_published
-                    or not post.category.is_published
-                    or post.pub_date > timezone.now()
-            )
+            request.user == post.author and (
+            not post.is_published
+            or not post.category.is_published
+            or post.pub_date > timezone.now()
+    )
     ):
         context = {
             'post': post,
