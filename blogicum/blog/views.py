@@ -61,8 +61,7 @@ def post_detail(request, post_id):
 
     if (
             post.is_published and (
-            post.category.is_published and post.pub_date <= timezone.now()
-    )
+            post.category.is_published and post.pub_date <= timezone.now())
     ):
         context = {
             'post': post,
@@ -75,8 +74,7 @@ def post_detail(request, post_id):
             request.user == post.author and (
             not post.is_published
             or not post.category.is_published
-            or post.pub_date > timezone.now()
-    )
+            or post.pub_date > timezone.now())
     ):
         context = {
             'post': post,
