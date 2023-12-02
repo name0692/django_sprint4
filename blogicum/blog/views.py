@@ -7,9 +7,9 @@ from django.contrib.auth.models import User
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 from django.urls import reverse_lazy
-from django.views import View
+from django.views.generic import DetailView
 from django.views.generic.edit import UpdateView, CreateView
-from django.contrib.auth.forms import UserChangeForm, PasswordChangeForm
+from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.views import PasswordChangeView
 
@@ -111,7 +111,7 @@ def category_posts(request, category_slug):
     return render(request, template, context)
 
 
-class UserProfileView(LoginRequiredMixin, View):
+class UserProfileDetailView(DetailView):
     template_name = 'blog/profile.html'
     posts_per_page = 10
 
@@ -129,12 +129,9 @@ class UserProfileView(LoginRequiredMixin, View):
         except EmptyPage:
             page_obj = paginator.page(paginator.num_pages)
 
-        form = UserChangeForm(instance=user)
         context = {
             'profile': user,
             'page_obj': page_obj,
-            'form': form,
-            'full_name': user.get_full_name()
         }
         return render(request, self.template_name, context)
 
