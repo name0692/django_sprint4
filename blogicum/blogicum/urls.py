@@ -29,7 +29,7 @@ urlpatterns = [
     path('', include('blog.urls', namespace='blog')),
     path('pages/', include('pages.urls', namespace='pages')),
     path('admin/', admin.site.urls),
-    path('accounts/', include('django.contrib.auth.urls')),
+    path('auth/', include('django.contrib.auth.urls')),
     path('accounts/login/', views.LoginView.as_view(), name='login'),
     path('403csrf/', permission_denied, {'exception': 'PermissionDenied'},
          name='403csrf'),

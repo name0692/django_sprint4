@@ -8,14 +8,10 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 from django.urls import reverse_lazy
 from django.views.generic import DetailView
-from django.views.generic.edit import UpdateView, CreateView
-from django.contrib.auth.forms import PasswordChangeForm
-from django.contrib.auth import update_session_auth_hash
-from django.contrib.auth.views import PasswordChangeView
+from django.views.generic.edit import CreateView
+from django.contrib.auth.forms import UserChangeForm
 
-from .forms import (
-    PostForm, CommentForm, CustomUserChangeForm, CustomPasswordChangeForm
-)
+from .forms import PostForm, CommentForm
 from .models import Post, Category, Comment
 
 DEFAULT_POSTS_COUNT = 5
@@ -136,39 +132,17 @@ class UserProfileDetailView(DetailView):
         return render(request, self.template_name, context)
 
 
-class UserProfileUpdateView(LoginRequiredMixin, UpdateView):
-    model = User
-    form_class = CustomUserChangeForm
-    template_name = 'registration_form.html'
-    success_url = reverse_lazy('blog:profile')
-
-    def get_object(self, queryset=None):
-        return self.request.user
-
-
-class CustomPasswordChangeView(PasswordChangeView):
-    form_class = CustomPasswordChangeForm
-    template_name = 'password_change.html'
-
-    def form_valid(self, form):
-        response = super().form_valid(form)
-        update_session_auth_hash(self.request, self.request.user)
-        return response
-
-
 @login_required
-def change_password(request):
+def edit_profile(request):
     if request.method == 'POST':
-        form = PasswordChangeForm(request.user, request.POST)
+        form = UserChangeForm(request.POST, instance=request.user)
         if form.is_valid():
-            user = form.save()
-            update_session_auth_hash(request, user)
-            return redirect('blog:profile',
-                            username=request.user.username)
+            form.save()
+            return redirect('blog:profile', username=request.user.username)
     else:
-        form = PasswordChangeForm(request.user)
+        form = UserChangeForm(instance=request.user)
 
-    return render(request, 'blog/user.html', {'form': form})
+    return render(request, 'blog/edit_profile.html', {'form': form})
 
 
 class PostCreateView(LoginRequiredMixin, CreateView):
