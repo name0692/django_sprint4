@@ -5,7 +5,6 @@ from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-
 from django.urls import reverse_lazy
 from django.views.generic import DetailView
 from django.views.generic.edit import CreateView
@@ -15,6 +14,7 @@ from .forms import PostForm, CommentForm
 from .models import Post, Category, Comment
 
 DEFAULT_POSTS_COUNT = 5
+POSTS_PER_PAGE = 10
 
 
 def get_queryset(query):
@@ -33,19 +33,18 @@ def index(request):
     template = 'blog/index.html'
     all_posts = get_queryset(Post.objects)
 
-    paginator = Paginator(all_posts, 10)
-    page = request.GET.get('page')
+    paginator = Paginator(all_posts, POSTS_PER_PAGE)
+    page = request.GET.get('page', 1)
 
     try:
         page_obj = paginator.page(page)
-    except PageNotAnInteger:
-        page_obj = paginator.page(1)
     except EmptyPage:
         page_obj = paginator.page(paginator.num_pages)
 
     context = {
         'page_obj': page_obj,
     }
+
     return render(request, template, context)
 
 
@@ -55,10 +54,22 @@ def post_detail(request, post_id):
     comments = Comment.objects.filter(post=post)
     form = CommentForm()
 
-    if (
-            post.is_published and (
-            post.category.is_published and post.pub_date <= timezone.now())
-    ):
+    should_display_post = (
+            post.is_published
+            and post.category.is_published
+            and post.pub_date <= timezone.now()
+    )
+
+    can_view_post = (
+            request.user == post.author
+            and (
+                    not post.is_published
+                    or not post.category.is_published
+                    or post.pub_date > timezone.now()
+            )
+    )
+
+    if should_display_post or can_view_post:
         context = {
             'post': post,
             'comments': comments,
@@ -66,18 +77,6 @@ def post_detail(request, post_id):
         }
         return render(request, template, context)
 
-    if (
-            request.user == post.author and (
-            not post.is_published
-            or not post.category.is_published
-            or post.pub_date > timezone.now())
-    ):
-        context = {
-            'post': post,
-            'comments': comments,
-            'form': form,
-        }
-        return render(request, template, context)
     else:
         return HttpResponseNotFound(render(request, 'pages/404.html'))
 
@@ -86,16 +85,13 @@ def category_posts(request, category_slug):
     template = 'blog/category.html'
     category = get_object_or_404(Category, slug=category_slug,
                                  is_published=True)
-
     posts = get_queryset(category.posts)
 
-    paginator = Paginator(posts, 10)
-    page = request.GET.get('page')
+    paginator = Paginator(posts, POSTS_PER_PAGE)
+    page = request.GET.get('page', 1)
 
     try:
         page_obj = paginator.page(page)
-    except PageNotAnInteger:
-        page_obj = paginator.page(1)
     except EmptyPage:
         page_obj = paginator.page(paginator.num_pages)
 
@@ -109,19 +105,16 @@ def category_posts(request, category_slug):
 
 class UserProfileDetailView(DetailView):
     template_name = 'blog/profile.html'
-    posts_per_page = 10
 
     def get(self, request, username):
         user = get_object_or_404(User, username=username)
         posts = Post.objects.filter(author=user).order_by('-pub_date')
 
-        paginator = Paginator(posts, self.posts_per_page)
-        page = request.GET.get('page')
+        paginator = Paginator(posts, POSTS_PER_PAGE)
+        page = request.GET.get('page', 1)
 
         try:
             page_obj = paginator.page(page)
-        except PageNotAnInteger:
-            page_obj = paginator.page(1)
         except EmptyPage:
             page_obj = paginator.page(paginator.num_pages)
 

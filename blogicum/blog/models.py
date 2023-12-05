@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth import get_user_model
 
 MAX_RETURN_LENGTH = 50
+MAX_LENGTH = 256
 User = get_user_model()
 
 
@@ -21,7 +22,10 @@ class BaseBlogModel(models.Model):
 
 
 class Location(BaseBlogModel):
-    name = models.CharField(verbose_name='Название места', max_length=256)
+    name = models.CharField(
+        verbose_name='Название места',
+        max_length=MAX_LENGTH
+    )
 
     class Meta:
         verbose_name = 'местоположение'
@@ -32,7 +36,7 @@ class Location(BaseBlogModel):
 
 
 class Category(BaseBlogModel):
-    title = models.CharField(verbose_name='Заголовок', max_length=256)
+    title = models.CharField(verbose_name='Заголовок', max_length=MAX_LENGTH)
     description = models.TextField(verbose_name='Описание')
     slug = models.SlugField(
         verbose_name='Идентификатор',
@@ -50,7 +54,7 @@ class Category(BaseBlogModel):
 
 
 class Post(BaseBlogModel):
-    title = models.CharField(verbose_name='Заголовок', max_length=256)
+    title = models.CharField(verbose_name='Заголовок', max_length=MAX_LENGTH)
     content = models.TextField(null=True)
     text = models.TextField(verbose_name='Текст')
     pub_date = models.DateTimeField(
