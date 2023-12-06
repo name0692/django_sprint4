@@ -5,7 +5,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.core.paginator import Paginator, EmptyPage
 from django.urls import reverse_lazy
 from django.views.generic import DetailView
 from django.views.generic.edit import CreateView
@@ -32,9 +32,11 @@ def get_queryset(query):
 
 def index(request):
     template = 'blog/index.html'
-    all_posts = get_queryset(Post.objects.annotate(
-        comment_count=Count('comments')).order_by('-pub_date')
-                             )
+    all_posts = get_queryset(
+        Post.objects.annotate(
+            comment_count=Count('comments')
+        ).order_by('-pub_date')
+    )
 
     paginator = Paginator(all_posts, POSTS_PER_PAGE)
     page = request.GET.get('page', 1)
