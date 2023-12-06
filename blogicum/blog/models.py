@@ -89,9 +89,6 @@ class Post(BaseBlogModel):
         blank=True
     )
 
-    def comment_count(self):
-        return Comment.objects.filter(post=self).count()
-
     class Meta:
         ordering = ['-pub_date']
         verbose_name = 'публикация'

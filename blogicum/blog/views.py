@@ -1,4 +1,5 @@
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db.models import Count
 from django.http import HttpResponseNotFound
 from django.shortcuts import render, get_object_or_404, redirect
 from django.utils import timezone
@@ -31,7 +32,9 @@ def get_queryset(query):
 
 def index(request):
     template = 'blog/index.html'
-    all_posts = get_queryset(Post.objects)
+    all_posts = get_queryset(Post.objects.annotate(
+        comment_count=Count('comments')).order_by('-pub_date')
+                             )
 
     paginator = Paginator(all_posts, POSTS_PER_PAGE)
     page = request.GET.get('page', 1)
@@ -54,31 +57,19 @@ def post_detail(request, post_id):
     comments = Comment.objects.filter(post=post)
     form = CommentForm()
 
-    should_display_post = (
-            post.is_published
-            and post.category.is_published
-            and post.pub_date <= timezone.now()
-    )
-
-    can_view_post = (
-            request.user == post.author
-            and (
-                    not post.is_published
-                    or not post.category.is_published
-                    or post.pub_date > timezone.now()
-            )
-    )
-
-    if should_display_post or can_view_post:
-        context = {
-            'post': post,
-            'comments': comments,
-            'form': form,
-        }
-        return render(request, template, context)
-
-    else:
+    if post.author != request.user and (
+            not post.is_published
+            or not post.category.is_published
+            or post.pub_date > timezone.now()
+    ):
         return HttpResponseNotFound(render(request, 'pages/404.html'))
+
+    context = {
+        'post': post,
+        'comments': comments,
+        'form': form,
+    }
+    return render(request, template, context)
 
 
 def category_posts(request, category_slug):
@@ -108,7 +99,8 @@ class UserProfileDetailView(DetailView):
 
     def get(self, request, username):
         user = get_object_or_404(User, username=username)
-        posts = Post.objects.filter(author=user).order_by('-pub_date')
+        posts = Post.objects.filter(author=user).annotate(
+            comment_count=Count('comments')).order_by('-pub_date')
 
         paginator = Paginator(posts, POSTS_PER_PAGE)
         page = request.GET.get('page', 1)
